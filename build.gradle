@@ -3,18 +3,43 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext.kotlin_version = '1.2.0'
-
     repositories {
         mavenCentral()
+        maven {
+            name = 'Sonatype Nexus Snapshots'
+            url = 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'net.wasdev.wlp.gradle.plugins:liberty-gradle-plugin:2.1-SNAPSHOT'
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'war'
+apply plugin: 'liberty'
+
+liberty {
+    install {
+        runtimeUrl="https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/wasdev/downloads/wlp/beta/wlp-beta-2017.11.0.0.zip"
+    }
+    server {
+        bootstrapProperties = ['default.http.port':'9080', 'default.https.port':'9443']
+        jvmOptions = ['-Xms128m', '-Xmx512m']
+        name = 'jvmConServer'
+        stripVersion = true
+        packageLiberty {
+            archive = "jvmcon.jar"
+            include = "runnable"
+        }
+    }
+    features {
+        name = ['mongodb-2.0']
+        acceptLicense = true
+    }
+}
 
 sourceCompatibility = 1.8
 
@@ -27,7 +52,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile group: 'junit', name: 'junit', version: '4.12'
     providedCompile 'javax.ws.rs:javax.ws.rs-api:2.1'
-    providedCompile 'org.glassfish.jersey.core:jersey-server:2.22.2'
 }
 
 compileKotlin {
