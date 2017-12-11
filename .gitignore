@@ -1,7 +1,7 @@
 .gradle
 /build/
 !gradle/wrapper/gradle-wrapper.jar
-
+jvmcon.jar
 ### STS ###
 .apt_generated
 .classpath

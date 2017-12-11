@@ -1,35 +1,49 @@
 import com.iska.jvmcon.Rating
+import com.iska.jvmcon.RatingBroadcaster
 import com.iska.jvmcon.Talk
 import java.util.*
-import javax.ws.rs.GET
-import javax.ws.rs.Path
-import javax.ws.rs.PathParam
-import javax.ws.rs.Produces
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.ws.rs.*
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.sse.Sse
+import javax.ws.rs.sse.SseBroadcaster
 import javax.ws.rs.sse.SseEventSink
 
-
-@Path("talks")
+@Path("/talks")
+@Produces(MediaType.APPLICATION_JSON)
 class TalkController {
 
     @GET
-    fun talks(): List<Talk> = listOf(Talk("12345", "The fallacies of Doom"),
-            Talk(",", "Exploring Java 9 Modularization"),
-            Talk("", "Kotlin 102 - Beyond the basics"))
+    fun talks() = listOf(Talk("1", "Bla"), Talk("1", "Bla"), Talk("1", "Bla"), Talk("1", "Bla"))
 
     @GET
     @Path("/{id}/ratings")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     fun eventStream(@PathParam("id") id: String, @Context eventSink: SseEventSink, @Context sse: Sse) {
 
-        (1..50).forEach {
-            eventSink.send(sse.newEventBuilder()
-                    .data(Rating(id, (Math.random() * 10).toInt() + 1, Date()))
-                    .mediaType(MediaType.APPLICATION_JSON_TYPE)
-                    .build())
+        if(RatingBroadcaster.broadcaster !is SseBroadcaster)
+            RatingBroadcaster.setBroadcasteer(sse.newBroadcaster(),sse)
+
+        RatingBroadcaster.broadcaster!!.register(eventSink)
+
+        (1..10).forEach {
+            RatingBroadcaster.fireRating(Rating(id, (Math.random() * 10).toInt() + 1, Date()))
         }
-        eventSink.close()
+
+//        eventSink.close()
     }
+
+    @GET
+    @Path("/test")
+    fun eventStream(): String {
+        if(RatingBroadcaster.broadcaster is SseBroadcaster ) {
+            (1..10).forEach {
+                RatingBroadcaster.fireRating(Rating("BOE", (Math.random() * 10).toInt() + 1, Date()))
+            }
+            return "OK"
+        } else return "NOK"
+    }
+
 }
